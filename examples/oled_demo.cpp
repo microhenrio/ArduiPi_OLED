@@ -244,7 +244,7 @@ void testscrolltext(void) {
   display.setCursor(10,0);
   display.clearDisplay();
   
-  if (opts.oled == OLED_SH1106_I2C_128x64)
+  if (opts.oled == OLED_SH1106_I2C_128x64 || opts.oled == OLED_SH1106_SPI_128x64)
     display.print("No scroll\non SH1106");
   else
     display.print("scroll");

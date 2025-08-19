@@ -29,7 +29,7 @@ HWPLAT:=$(shell cat $(ROOT_DIR)/../hwplatform)
 prefix := /usr/local
 
 # define all programs
-PROGRAMS = oled_demo teleinfo-oled
+PROGRAMS = oled_demo #teleinfo-oled
 SOURCES = ${PROGRAMS:=.cpp}
 
 CXX=g++
@@ -38,7 +38,7 @@ CFLAGS=${CCFLAGS}
 all: ${PROGRAMS}
 
 ${PROGRAMS}: ${SOURCES}
-	$(CXX) $(CFLAGS) -Wall $@.cpp -o $@ -lArduiPi_OLED
+	$(CXX) $(CFLAGS) -g -Wall -DDEBUG $@.cpp -o $@ -lArduiPi_OLED
 
 clean:
 	rm -rf $(PROGRAMS)
@@ -49,7 +49,9 @@ install: all
 	for prog in $(PROGRAMS); do \
 	  install -m 0755 $$prog $(prefix)/bin; \
 	done
-
+# debug:
+# 	$(CXX) $(CFLAGS) -g -Wall -DDEBUG $(SOURCES) -o debug/$(PROGRAMS) -lArduiPi_OLED
+	
 .PHONY: install
 
 

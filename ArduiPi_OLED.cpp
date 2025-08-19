@@ -255,6 +255,7 @@ boolean ArduiPi_OLED::oled_is_spi_proto(uint8_t OLED_TYPE)
   {
     case OLED_ADAFRUIT_SPI_128x32:
     case OLED_ADAFRUIT_SPI_128x64:
+    case OLED_SH1106_SPI_128x64:
       return true;
     break;
   }
@@ -285,6 +286,7 @@ boolean ArduiPi_OLED::select_oled(uint8_t OLED_TYPE)
     break;
 
     case OLED_ADAFRUIT_SPI_128x64:
+    case OLED_SH1106_SPI_128x64:
     ;
     break;
     
@@ -363,7 +365,7 @@ boolean ArduiPi_OLED::init(int8_t DC, int8_t RST, int8_t CS, uint8_t OLED_TYPE)
   bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                
   
   // 16 MHz SPI bus, but Worked at 62 MHz also  
-  bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_8192); 
+  bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_16); 
 
   // Set the pin that will control DC as output
   bcm2835_gpio_fsel(dc, BCM2835_GPIO_FSEL_OUTP);
@@ -468,7 +470,7 @@ void ArduiPi_OLED::begin( void )
       multiplex = 0x3F;
       compins   = 0x12;
       
-      if (oled_type == OLED_SH1106_I2C_128x64)
+      if (oled_type == OLED_SH1106_I2C_128x64 || oled_type == OLED_SH1106_SPI_128x64)
         contrast = 0x80;
       else
         contrast = (vcc_type==SSD_External_Vcc?0x9F:0xCF);
@@ -540,7 +542,7 @@ void ArduiPi_OLED::begin( void )
     grayH= 0xF0;
     grayL= 0x0F;
   }
-  else if (oled_type == OLED_SH1106_I2C_128x64)
+  else if (oled_type == OLED_SH1106_I2C_128x64 || oled_type == OLED_SH1106_SPI_128x64)
   {
     sendCommand(SSD1306_Set_Lower_Column_Start_Address|0x02); /*set lower column address*/
     sendCommand(SSD1306_Set_Higher_Column_Start_Address);     /*set higher column address*/
@@ -892,24 +894,42 @@ void ArduiPi_OLED::display(void)
   // SPI
   if ( isSPI())
   {
-    // Setup D/C line to high to switch to data mode
-    bcm2835_gpio_write(dc, HIGH);
+    if(oled_type != OLED_SH1106_SPI_128x64 ){
+      // Setup D/C line to high to switch to data mode
+      bcm2835_gpio_write(dc, HIGH);
 
-    // Send all data to OLED
-    for ( i=0; i<oled_buff_size; i++) 
-    {
-      fastSPIwrite(*p++);
-    }
-
-    // I wonder why we have to do this (check datasheet)
-    if (oled_height == 32) 
-    {
-      for (uint16_t i=0; i<oled_buff_size; i++) 
+      // Send all data to OLED
+      for ( i=0; i<oled_buff_size; i++) 
       {
-        fastSPIwrite(0);
+        fastSPIwrite(*p++);
+      }
+
+      // I wonder why we have to do this (check datasheet)
+      if (oled_height == 32) 
+      {
+        for (uint16_t i=0; i<oled_buff_size; i++) 
+        {
+          fastSPIwrite(0);
+        }
+      }
+    }else{ //OLED_SH1106_SPI_128x64
+      char buff[16] ;
+      uint8_t x ;
+      for (uint8_t k=0; k<8; k++) 
+      {
+        sendCommand(0xB0+k);//set page addressSSD_Data_Mode;
+        sendCommand(0x02) ;//set lower column address
+        sendCommand(0x10) ;//set higher column address
+        
+        bcm2835_gpio_write(dc, HIGH);  // sending data
+        for( i=0; i<8; i++)
+        {
+          for (x=0; x<=15; x++)
+            buff[x] = *p++;
+          fastSPIwrite(&buff[0], 16);
+        }
       }
     }
-    
   }
   // I2C
   else 
