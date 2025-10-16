@@ -68,7 +68,7 @@ void Adafruit_GFX::print( const char * string)
 	
 	while (*p != 0 && n-->0)
 	{
-		write ( (uint8_t) *p++);
+		writeToken ( (uint8_t) *p++);
 	}
 
 }
@@ -492,6 +492,60 @@ size_t Adafruit_GFX::write(uint8_t c)
       cursor_x = 0;
     }
   }
+  return 1;
+}
+
+// auxiliary function to print a complete word
+void Adafruit_GFX::printWord(const char* word) 
+{
+  int wordWidth = strlen(word) * textsize * 6;
+  if (wrap && (cursor_x + wordWidth > _width)) 
+  {
+    cursor_y += textsize * 8;
+    cursor_x = 0;
+  }
+
+  for (uint8_t i = 0; word[i] != '\0'; i++) 
+  {
+    drawChar(cursor_x, cursor_y, word[i], textcolor, textbgcolor, textsize);
+    cursor_x += textsize * 6;
+  }
+}
+
+size_t Adafruit_GFX::writeToken(uint8_t c) 
+{
+  static char wordBuffer[64];  // Maximum word size
+  static uint8_t wordIndex = 0;
+
+  if (c == '\n') 
+  {
+    cursor_y += textsize * 8;
+    cursor_x = 0;
+  } 
+  else if (c == '\r') 
+  {
+    // skip
+  } 
+  else if (c == ' ') 
+  {
+    // Print pending word
+    if (wordIndex > 0) {
+      wordBuffer[wordIndex] = '\0';
+      printWord(wordBuffer);
+      wordIndex = 0;
+    }
+    // Print space
+    drawChar(cursor_x, cursor_y, ' ', textcolor, textbgcolor, textsize);
+    cursor_x += textsize * 6;
+  } 
+  else 
+  {
+    // Accumulate character in buffer
+    if (wordIndex < sizeof(wordBuffer) - 1) {
+      wordBuffer[wordIndex++] = c;
+    }
+  }
+
   return 1;
 }
 

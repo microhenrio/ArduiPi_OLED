@@ -229,10 +229,10 @@ extern "C" void Wrapper_SetTextWrap(boolean w)
 
 extern "C" int16_t Wrapper_DisplayWidth()
 {
-	extDisplay->width();
+	return extDisplay->width();
 }
 
 extern "C" int16_t Wrapper_DisplayHeight()
 {
-	extDisplay->height();
+	return extDisplay->height();
 }

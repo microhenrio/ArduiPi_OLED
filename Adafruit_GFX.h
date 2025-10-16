@@ -36,7 +36,8 @@ class Adafruit_GFX {
   // this must be defined by the subclass
   virtual void drawPixel(int16_t x, int16_t y, uint16_t color) = 0;
   virtual void invertDisplay(boolean i);
-	
+  virtual void printWord(const char* word);
+  
 	// the printf function
 	void printf( const char * format, ...);
 	void print( const char * string) ;
@@ -66,6 +67,7 @@ class Adafruit_GFX {
   void drawBitmap(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int16_t h, uint16_t color);
   void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size);
   virtual size_t write(uint8_t);
+  virtual size_t writeToken(uint8_t);
 
   void setCursor(int16_t x, int16_t y);
   void setTextColor(uint16_t c);
