@@ -41,6 +41,7 @@ class Adafruit_GFX {
 	// the printf function
 	void printf( const char * format, ...);
 	void print( const char * string) ;
+	uint16_t printScreen( const char * string) ;
 
   // these are 'generic' drawing functions, so we can share them!
   virtual void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
@@ -74,11 +75,10 @@ class Adafruit_GFX {
   void setTextColor(uint16_t c, uint16_t bg);
   void setTextSize(uint8_t s);
   void setTextWrap(boolean w);
-
   int16_t height(void);
   int16_t width(void);
-
- protected:
+  
+  protected:
   int16_t  WIDTH, HEIGHT;   // this is the 'raw' display w/h - never changes
   int16_t  _width, _height; // dependent on rotation
   int16_t  cursor_x, cursor_y;
@@ -86,6 +86,10 @@ class Adafruit_GFX {
   uint8_t  textsize;
   uint8_t  rotation;
   boolean  wrap; // If set, 'wrap' text at right edge of display
+  // boolean  downArrow;
+  uint16_t lastChar;
+  char wordBuffer[64];  // Maximum word size
+  uint8_t wordIndex = 0;
 };
 
 #endif

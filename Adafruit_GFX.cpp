@@ -37,6 +37,8 @@ void Adafruit_GFX::constructor(int16_t w, int16_t h)
   textsize = 1;
   textcolor = textbgcolor = 0xFFFF;
   wrap = true;
+  // downArrow = false;
+  lastChar = 0; // reset last splitted char index
 }
 
 // the printf function
@@ -65,14 +67,28 @@ void Adafruit_GFX::print( const char * string)
 
 	const char * p = string;
 	int n = strlen(string);
-	
+	lastChar = 0; // reset last splitted char index
 	while (*p != 0 && n-->0)
 	{
-		writeToken ( (uint8_t) *p++);
+		write ( (uint8_t) *p++);
 	}
 
 }
-
+// print to the screen, but using writeToken that don't split the words
+uint16_t Adafruit_GFX::printScreen( const char * string) 
+{
+	const char * p = string;
+	int n = strlen(string);
+	// downArrow = false;
+  lastChar = 0; // reset last splitted char index
+  wordBuffer[0] = '\0'; // reset word buffer
+  wordIndex = 0;
+	while (*p != 0 && n-->0)
+	{
+		writeToken ( (uint8_t) *p++); // write but don't split words
+	}
+  return lastChar;
+}
 
 // draw a circle outline
 void Adafruit_GFX::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) 
@@ -498,27 +514,50 @@ size_t Adafruit_GFX::write(uint8_t c)
 // auxiliary function to print a complete word
 void Adafruit_GFX::printWord(const char* word) 
 {
-  int wordWidth = strlen(word) * textsize * 6;
-  if (wrap && (cursor_x + wordWidth > _width)) 
+  int wordWidth = strlen(word) * textsize * 6;  // with of 6 pixels per character
+  int16_t effectiveWidth = _width - ((cursor_y == 0 || cursor_y >= (_height - (textsize * 8))) ? textsize*2 * 6 : textsize * 6); // leave space for arrows on first and last line
+
+  // check if we need to wrap before printing the word
+  if (wrap && (cursor_x + wordWidth > effectiveWidth) && wordWidth < effectiveWidth) 
   {
-    cursor_y += textsize * 8;
+    cursor_y += textsize * 8; // Move to next line
     cursor_x = 0;
   }
 
+  // prints the word char by char
   for (uint8_t i = 0; word[i] != '\0'; i++) 
   {
+    if (cursor_x > effectiveWidth)
+    {
+      cursor_y += textsize * 8; // Move to next line
+      cursor_x = 0;
+    }
+    if(cursor_y >= _height) 
+    {
+      // No more space to print
+      // fillRect(120, 56, 8, 8, 0); // Clear space for arrow
+      // drawTriangle(124, 63, 127, 56, 121, 56, 1);
+      // fillTriangle(124, 62, 126, 56, 121, 56, 1);
+      // downArrow = true; // down arrow printed
+      break;
+    }
     drawChar(cursor_x, cursor_y, word[i], textcolor, textbgcolor, textsize);
-    cursor_x += textsize * 6;
+    cursor_x += textsize * 6; // Move cursor forward
   }
 }
 
 size_t Adafruit_GFX::writeToken(uint8_t c) 
 {
-  static char wordBuffer[64];  // Maximum word size
-  static uint8_t wordIndex = 0;
+  
 
-  if (c == '\n') 
+  if (c == '\n') // end of line detected
   {
+    // Print pending word
+    if (wordIndex > 0) {
+      wordBuffer[wordIndex] = '\0';
+      printWord(wordBuffer);
+      wordIndex = 0;
+    }
     cursor_y += textsize * 8;
     cursor_x = 0;
   } 
@@ -526,7 +565,7 @@ size_t Adafruit_GFX::writeToken(uint8_t c)
   {
     // skip
   } 
-  else if (c == ' ') 
+  else if (c == ' ') // end of word
   {
     // Print pending word
     if (wordIndex > 0) {
@@ -558,7 +597,7 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t colo
      ((x + 5 * size - 1) < 0) || // Clip left
      ((y + 8 * size - 1) < 0))   // Clip top
     return;
-
+  
   for (int8_t i=0; i<6; i++ ) 
 	{
     uint8_t line;
@@ -591,6 +630,7 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t colo
       line >>= 1;
     }
   }
+  lastChar++; // one char printed, increment lastChar index
 }
 
 void Adafruit_GFX::setCursor(int16_t x, int16_t y) 

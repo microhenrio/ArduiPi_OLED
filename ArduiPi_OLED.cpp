@@ -979,5 +979,7 @@ void ArduiPi_OLED::clearDisplay(void)
   memset(poledbuff, 0, oled_buff_size);
 }
 
-
-
+// boolean ArduiPi_OLED::isDownArrow(void)
+// {  
+//   return downArrow;
+// }
